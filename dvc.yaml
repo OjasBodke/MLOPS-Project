@@ -1,0 +1,9 @@
+
+stages:
+  train:
+    cmd: python src/train.py
+    deps:
+      - /content/drive/MyDrive/MLOPS_Project/uci_malware_detection.csv
+      - src/train.py
+    outs:
+      - models

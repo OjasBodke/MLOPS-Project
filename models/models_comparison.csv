@@ -1,0 +1,9 @@
+model,accuracy,f1,precision,recall
+AdaBoost,1.0,1.0,1.0,1.0
+GaussianNB,1.0,1.0,1.0,1.0
+DecisionTree,1.0,1.0,1.0,1.0
+ExtraTrees,1.0,1.0,1.0,1.0
+SGD_log,1.0,1.0,1.0,1.0
+SGD_hinge,1.0,1.0,1.0,1.0
+RandomForest,1.0,1.0,1.0,1.0
+KNeighbors,0.9866666666666667,0.9864739536284252,0.9868817204301075,0.9866666666666667

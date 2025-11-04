@@ -1,0 +1,9 @@
+model,accuracy
+GaussianNB,0.9866666666666667
+SGDClassifier_Log,0.9866666666666667
+SGDClassifier_Hinge,0.9866666666666667
+AdaBoostClassifier,0.9733333333333334
+RandomForestClassifier,0.9733333333333334
+ExtraTreesClassifier,0.9733333333333334
+DecisionTreeClassifier,0.9466666666666667
+KNeighborsClassifier,0.9466666666666667
