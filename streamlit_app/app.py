@@ -57,9 +57,19 @@ if uploaded_file is not None and model is not None:
         st.write("### 🧾 Uploaded Data Preview")
         st.dataframe(input_data.head())
 
+        # Drop 'Label' or any target columns automatically
+        if 'Label' in input_data.columns:
+            input_data = input_data.drop(columns=['Label'])
+            st.info("ℹ️ 'Label' column detected and removed before prediction.")
+
+        # Keep only numeric columns
+        numeric_data = input_data.select_dtypes(include=[np.number])
+        if numeric_data.shape[1] < input_data.shape[1]:
+            st.warning("⚠️ Non-numeric columns were removed before prediction.")
+
         if st.button("🚀 Predict"):
             try:
-                predictions = model.predict(input_data)
+                predictions = model.predict(numeric_data)
                 st.success("✅ Predictions generated successfully!")
 
                 # Display predictions
@@ -86,4 +96,5 @@ if uploaded_file is not None and model is not None:
 # 🧾 FOOTER
 # ------------------------------------------------
 st.markdown("---")
-st.markdown("Developed with ❤️ for the **MLOps Project**")
+st.markdown("Developed By Ojas Bodke")
+
