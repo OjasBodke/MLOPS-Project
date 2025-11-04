@@ -21,7 +21,7 @@ available_models = [m for m in os.listdir(MODEL_DIR) if m.endswith(".pkl")]
 # ------------------------------------------------
 st.set_page_config(page_title="MLOps Model Deployment", layout="centered")
 
-st.title("🤖MALWARE DETECTION DASHBOARD")
+st.title("🤖 MALWARE DETECTION DASHBOARD")
 st.markdown("---")
 st.write("Welcome! Upload a CSV file and select a trained model to make predictions.")
 
