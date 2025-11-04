@@ -1,0 +1,4 @@
+[core]
+    remote = myremote
+['remote "myremote"']
+    url = file:///content/drive/MyDrive/MLOPS_Project/dvc_remote

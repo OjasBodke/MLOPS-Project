@@ -1,0 +1,23 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: malware-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: malware-app
+  template:
+    metadata:
+      labels:
+        app: malware-app
+    spec:
+      containers:
+      - name: malware-app
+        image: <YOUR_DOCKER_IMAGE> # replace with your docker image
+        ports:
+        - containerPort: 8501
+        env:
+        - name: MODELS_DIR
+          value: /app/models

@@ -1,5 +1,4 @@
 
-# train.py - trains multiple models and saves them
 import pandas as pd, numpy as np, joblib, os
 from pathlib import Path
 from sklearn.model_selection import train_test_split
@@ -18,7 +17,8 @@ MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 print("Loading dataset:", DATA_PATH)
 df = pd.read_csv(DATA_PATH)
-# Expect Label column in first column; adapt if different
+
+# detect label column
 if 'Label' in df.columns:
     y = df['Label']
     X = df.drop(columns=['Label'])
@@ -26,18 +26,19 @@ else:
     y = df.iloc[:,0]
     X = df.iloc[:,1:]
 
-# encode labels if needed
-if X.shape[0] == 0:
-    raise ValueError("No rows in data")
-if y.dtype == object:
+# encode y if non-numeric
+if y.dtype == object or y.dtype.name == 'category':
     le = LabelEncoder()
     y = le.fit_transform(y)
     joblib.dump(le, MODELS_DIR / 'label_encoder.joblib')
 
-# ensure numeric
+# ensure numeric and fillna
 X = X.apply(pd.to_numeric, errors='coerce').fillna(0)
 
-# train test split
+# save column info
+joblib.dump({'feature_columns': list(X.columns), 'target_col': 'Label' if 'Label' in df.columns else None}, MODELS_DIR / 'cols_info.joblib')
+
+# train / test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 scaler = StandardScaler()
@@ -62,11 +63,10 @@ for name, clf in models.items():
     clf.fit(X_train_s, y_train)
     y_pred = clf.predict(X_test_s)
     acc = accuracy_score(y_test, y_pred)
-    print(name, "acc", acc)
+    print(name, "accuracy:", acc)
     joblib.dump(clf, MODELS_DIR / f"{name}_model.pkl")
-    results.append({'model':name, 'accuracy':acc})
+    results.append({'model': name, 'accuracy': acc})
 
-# save comparison
-import json
-(pd.DataFrame(results).to_csv(MODELS_DIR / 'models_comparison.csv', index=False))
-print("Saved models & comparison to", MODELS_DIR)
+res_df = pd.DataFrame(results)
+res_df.to_csv(MODELS_DIR / 'models_comparison.csv', index=False)
+print("Saved models and comparison to", MODELS_DIR)
