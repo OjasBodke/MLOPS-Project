@@ -1,143 +1,89 @@
+# ===============================================
+# ⚡ MLOps Project — Machine Learning Model Deployment
+# ===============================================
 
 import streamlit as st
 import pandas as pd
 import numpy as np
-from pathlib import Path
-import pickle, os
-import plotly.express as px
-import time
+import joblib
+import os
 
-# 🌌 Enhanced Dark Neon Theme
-st.markdown('''
-    <style>
-        body {
-            background: linear-gradient(to bottom right, #000000, #0d1117, #1a1a2e);
-            color: #e0e0e0;
-        }
-        .stApp {
-            background-color: transparent !important;
-        }
-        /* Title styling - black text */
-        h1 {
-            color: #000000 !important;
-            text-shadow: 0px 0px 15px #00eaff;
-        }
-        h2, h3 {
-            color: #ffcc00 !important;
-        }
-        /* Sidebar - Dark Cyber Look with black heading */
-        div[data-testid="stSidebar"] {
-            background: linear-gradient(to bottom, #0d1117, #1e293b);
-            color: #e0e0e0;
-            border-right: 2px solid #00eaff;
-            box-shadow: 2px 0px 15px #00eaff50;
-        }
-        div[data-testid="stSidebar"] h1, div[data-testid="stSidebar"] h2, div[data-testid="stSidebar"] h3 {
-            color: #000000 !important;
-            text-shadow: none !important;
-        }
-        div.stButton > button {
-            background: linear-gradient(90deg, #00eaff, #0077b6);
-            color: white;
-            border-radius: 10px;
-            border: none;
-            transition: 0.3s;
-            box-shadow: 0px 0px 10px #00eaff80;
-        }
-        div.stButton > button:hover {
-            transform: scale(1.05);
-            background: linear-gradient(90deg, #0096c7, #48cae4);
-            box-shadow: 0px 0px 15px #00eaff;
-        }
-        .metric-label {color: #ffcc00 !important;}
-    </style>
-''', unsafe_allow_html=True)
+# ------------------------------------------------
+# 📁 MODEL DIRECTORY
+# ------------------------------------------------
+MODEL_DIR = "models"
 
-# 🧠 Header (Black)
-st.markdown("<h1 style='text-align:center;'>⚡ MLOps Malware Detection Dashboard</h1>", unsafe_allow_html=True)
+# Automatically list available model files
+available_models = [m for m in os.listdir(MODEL_DIR) if m.endswith(".pkl")]
+
+# ------------------------------------------------
+# 🎯 STREAMLIT APP UI
+# ------------------------------------------------
+st.set_page_config(page_title="MLOps Model Deployment", layout="centered")
+
+st.title("🤖 MLOps Project — Model Deployment Dashboard")
 st.markdown("---")
+st.write("Welcome! Upload a CSV file and select a trained model to make predictions.")
 
-MODELS_DIR = Path("/content/drive/MyDrive/MLOPS_Project/models")
-SCALER_PATH = Path("/content/drive/MyDrive/MLOPS_Project/models/scaler.pkl")
-PERF_PATH = Path("/content/drive/MyDrive/MLOPS_Project/models/model_performance.csv")
+# ------------------------------------------------
+# 📤 FILE UPLOAD
+# ------------------------------------------------
+uploaded_file = st.file_uploader("Upload your CSV file for prediction", type=["csv"])
 
-# Sidebar (Black Heading)
-st.sidebar.markdown("<h2 style='color:black;'>🎛️ Controls Panel</h2>", unsafe_allow_html=True)
-selected_model_file = st.sidebar.selectbox("Choose a Model", sorted(os.listdir(MODELS_DIR)))
-generate_sample = st.sidebar.button("✨ Generate Random Sample (5 rows)")
-st.sidebar.info("Upload your dataset below or generate a sample to test predictions.")
+# ------------------------------------------------
+# 🧠 MODEL SELECTION
+# ------------------------------------------------
+if available_models:
+    selected_model_file = st.selectbox("Select a model", available_models)
+    model_path = os.path.join(MODEL_DIR, selected_model_file)
 
-# Leaderboard
-if PERF_PATH.exists():
-    perf_df = pd.read_csv(PERF_PATH)
-    st.subheader("🏆 Model Accuracy Leaderboard")
-    st.dataframe(perf_df.style.background_gradient(cmap='Blues'))
-    fig = px.bar(perf_df, x='model', y='accuracy', title='Model Accuracy Comparison',
-                 color='accuracy', color_continuous_scale='Viridis')
-    st.plotly_chart(fig, use_container_width=True)
-
-# Load model & scaler
-with open(SCALER_PATH, 'rb') as f:
-    scaler = pickle.load(f)
-with open(MODELS_DIR / selected_model_file, 'rb') as f:
-    model = pickle.load(f)
-
-st.markdown("---")
-st.header("📤 Upload CSV for Batch Prediction")
-
-uploaded = st.file_uploader("Upload CSV (only numeric features will be used)", type=['csv'])
-df_input = None
-
-# Sample generator
-if generate_sample:
+    # Load model safely
     try:
-        n_features = scaler.mean_.shape[0]
-    except:
-        n_features = 10
-    cols = [f"F_{i+1}" for i in range(n_features)]
-    sample = pd.DataFrame(np.random.randint(0,2,size=(5,n_features)), columns=cols)
-    st.success("✅ Sample data generated!")
-    st.dataframe(sample)
-    df_input = sample
+        model = joblib.load(model_path)
+        st.success(f"✅ Model '{selected_model_file}' loaded successfully.")
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        model = None
+else:
+    st.warning("⚠️ No models found in 'models/' directory.")
+    model = None
 
-if uploaded is not None:
-    df_uploaded = pd.read_csv(uploaded)
-    st.write("### Uploaded Data Preview")
-    st.dataframe(df_uploaded.head())
-    df_input = df_uploaded
+# ------------------------------------------------
+# 🔍 PREDICTION SECTION
+# ------------------------------------------------
+if uploaded_file is not None and model is not None:
+    try:
+        input_data = pd.read_csv(uploaded_file)
+        st.write("### 🧾 Uploaded Data Preview")
+        st.dataframe(input_data.head())
 
-# Prediction
-if df_input is not None:
-    st.markdown("---")
-    with st.spinner("🚀 Running Predictions... Please wait"):
-        time.sleep(1)
-        df_num = df_input.select_dtypes(include=['number']).fillna(0)
-        try:
-            required_n = scaler.mean_.shape[0]
-            if df_num.shape[1] < required_n:
-                for i in range(df_num.shape[1], required_n):
-                    df_num[f"PAD_{i}"] = 0
-            elif df_num.shape[1] > required_n:
-                df_num = df_num.iloc[:, :required_n]
-        except Exception:
-            st.warning("Couldn't detect required feature count; predictions may fail.")
+        if st.button("🚀 Predict"):
+            try:
+                predictions = model.predict(input_data)
+                st.success("✅ Predictions generated successfully!")
 
-        X_scaled = scaler.transform(df_num.values)
-        preds = model.predict(X_scaled)
-        df_out = df_input.copy()
-        df_out['Prediction'] = preds
-        df_out['Prediction_Label'] = df_out['Prediction'].map({0: '🟢 Non-Malicious', 1: '🔴 Malicious'})
-        st.success("✅ Prediction complete!")
-        st.write("### Results (first 50 rows)")
-        st.dataframe(df_out.head(50))
+                # Display predictions
+                st.write("### 📊 Prediction Results")
+                st.dataframe(pd.DataFrame(predictions, columns=["Predicted Output"]))
 
-        # 🎨 Light-colored pie chart
-        counts = df_out['Prediction_Label'].value_counts().reset_index()
-        counts.columns = ['Prediction_Label', 'Count']
-        fig_pred = px.pie(counts, names='Prediction_Label', values='Count',
-                          title="Prediction Distribution",
-                          color_discrete_sequence=px.colors.qualitative.Pastel1)
-        st.plotly_chart(fig_pred, use_container_width=True)
+                # Download option
+                output_df = input_data.copy()
+                output_df["Predicted Output"] = predictions
+                csv = output_df.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    label="⬇️ Download Predictions as CSV",
+                    data=csv,
+                    file_name="predictions.csv",
+                    mime="text/csv",
+                )
+            except Exception as e:
+                st.error(f"Error during prediction: {e}")
 
-        csv = df_out.to_csv(index=False).encode('utf-8')
-        st.download_button("⬇️ Download Predictions CSV", csv, "predictions.csv", "text/csv")
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+
+# ------------------------------------------------
+# 🧾 FOOTER
+# ------------------------------------------------
+st.markdown("---")
+st.markdown("Developed with ❤️ for the **MLOps Project**")
