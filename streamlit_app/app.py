@@ -60,7 +60,7 @@ if uploaded_file is not None and model is not None:
         # Drop 'Label' or any target columns automatically
         if 'Label' in input_data.columns:
             input_data = input_data.drop(columns=['Label'])
-            st.info()
+            st.info("")
 
         # Keep only numeric columns
         numeric_data = input_data.select_dtypes(include=[np.number])
